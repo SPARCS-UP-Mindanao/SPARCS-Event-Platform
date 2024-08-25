@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
-from model.events.events_constants import EventStatus
+from model.events.events_constants import EventStatus, RegistrationType
 from pydantic import BaseModel, EmailStr, Extra, Field
 from pynamodb.attributes import BooleanAttribute, NumberAttribute, UnicodeAttribute
 from pynamodb.indexes import AllProjection, LocalSecondaryIndex
@@ -43,6 +43,8 @@ class Event(Model):
     name = UnicodeAttribute(null=True)
     description = UnicodeAttribute(null=True)
     status = UnicodeAttribute(null=True)
+    registrationType = UnicodeAttribute(null=True)
+    redirectRegisterUrl = UnicodeAttribute(null=True)
     email = UnicodeAttribute(null=True)
     startDate = UnicodeAttribute(null=True)
     endDate = UnicodeAttribute(null=True)
@@ -74,6 +76,8 @@ class EventIn(BaseModel):
 
     name: str = Field(None, title='Name')
     description: str = Field(None, title='Description')
+    registrationType: RegistrationType = Field(RegistrationType.TECHTIX, title='Registration Type')
+    redirectRegisterUrl: str = Field(None, title='Redirect Register URL')
     email: EmailStr = Field(None, title='Email')
     startDate: datetime = Field(None, title='Date')
     endDate: datetime = Field(None, title='Date')

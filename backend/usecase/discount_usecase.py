@@ -10,10 +10,12 @@ from model.discount.discount import (
     DiscountOrganization,
     DiscountOut,
 )
+from model.events.events_constants import RegistrationType
 from repository.discount_repository import DiscountsRepository
 from repository.events_repository import EventsRepository
 from repository.registrations_repository import RegistrationsRepository
 from starlette.responses import JSONResponse
+from usecase.event_usecase import EventUsecase
 from utils.utils import Utils
 
 
@@ -36,6 +38,11 @@ class DiscountUsecase:
         :rtype: DiscountOut
 
         """
+        event = EventUsecase.get_event(event_id)
+        if event.registrationType == RegistrationType.REDIRECT:
+            message = 'Error: No discounts for REDIRECT registrationType'
+            return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={'message': message})
+
         status, discount, message = self.__discounts_repository.query_discount_with_discount_id(
             event_id=event_id, discount_id=entry_id
         )
@@ -71,6 +78,11 @@ class DiscountUsecase:
         :rtype: List[DiscountOrganization]
 
         """
+        event = EventUsecase.get_event(event_id)
+        if event.registrationType == RegistrationType.REDIRECT:
+            message = 'Error: No discounts for REDIRECT registrationType'
+            return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={'message': message})
+
         status, discounts, message = self.__discounts_repository.query_discounts(
             event_id=event_id,
         )
@@ -122,6 +134,12 @@ class DiscountUsecase:
         :rtype: Union[DiscountOut, JSONResponse]
 
         """
+
+        event = EventUsecase.get_event(event_id)
+        if event.registrationType == RegistrationType.REDIRECT:
+            message = 'Error: No discounts for REDIRECT registrationType'
+            return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={'message': message})
+
         status, discount_entry, message = self.__discounts_repository.query_discount_with_discount_id(
             discount_id=entry_id, event_id=event_id
         )
@@ -163,7 +181,13 @@ class DiscountUsecase:
         :rtype: Union[JSONResponse, List[DiscountOut]]
 
         """
+        event = EventUsecase.get_event(DiscountIn.eventId)
+        if event.registrationType == RegistrationType.REDIRECT:
+            message = 'Error: Discounts should not be created for REDIRECT registrationType'
+            return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={'message': message})
+
         status, _, __ = self.__events_repository.query_events(discount_in.eventId)
+
         if status != HTTPStatus.OK:
             return JSONResponse(status_code=status, content={'message': 'Event does not exist'})
 

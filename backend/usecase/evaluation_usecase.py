@@ -8,11 +8,13 @@ from model.evaluations.evaluation import (
     EvaluationOut,
     EvaluationPatch,
 )
+from model.events.events_constants import RegistrationType
 from model.registrations.registration import RegistrationPatch, RegistrationPreviewOut
 from repository.evaluations_repository import EvaluationRepository
 from repository.events_repository import EventsRepository
 from repository.registrations_repository import RegistrationsRepository
 from starlette.responses import JSONResponse
+from usecase.event_usecase import EventUsecase
 
 
 class EvaluationUsecase:
@@ -33,6 +35,13 @@ class EvaluationUsecase:
         """
         event_id = evaluation_list_in.eventId
         registration_id = evaluation_list_in.registrationId
+
+        # NOTE: next three lines copy pasted a lot, should this be a helper or nah kay mubo ra
+        event = EventsRepository.query_events(event_id)
+        if event.registrationType == RegistrationType.REDIRECT:
+            message = 'Error: Evaluation should not be created for REDIRECT registrationType'
+            return JSONResponse(status_code=HTTPStatus.BAD_REQUEST, content={'message': message})
+
         status, _, message = self.__events_repository.query_events(event_id=event_id)
         if status != HTTPStatus.OK:
             return JSONResponse(status_code=status, content={'message': message})
@@ -85,6 +94,11 @@ class EvaluationUsecase:
         :rtype: Union[JSONResponse, EvaluationOut]
 
         """
+        event = EventUsecase.get_event(event_id)
+        if event.registrationType == RegistrationType.REDIRECT:
+            message = 'Error: No evaluation to update for REDIRECT registrationType'
+            return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={'message': message})
+
         status, _, message = self.__events_repository.query_events(event_id=event_id)
         if status != HTTPStatus.OK:
             return JSONResponse(status_code=status, content={'message': message})
@@ -128,6 +142,11 @@ class EvaluationUsecase:
         :rtype: Union[JSONResponse, EvaluationOut]
 
         """
+        event = EventUsecase.get_event(event_id)
+        if event.registrationType == RegistrationType.REDIRECT:
+            message = 'Error: No evaluations for REDIRECT registrationType'
+            return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={'message': message})
+
         status, _, message = self.__events_repository.query_events(event_id=event_id)
         if status != HTTPStatus.OK:
             return JSONResponse(status_code=status, content={'message': message})
@@ -160,6 +179,11 @@ class EvaluationUsecase:
 
         """
         if event_id:
+            event = EventUsecase.get_event(event_id)
+            if event.registrationType == RegistrationType.REDIRECT:
+                message = 'Error: No evaluations for REDIRECT registrationType'
+                return JSONResponse(status_code=HTTPStatus.NOT_FOUND, content={'message': message})
+
             status, _, message = self.__events_repository.query_events(event_id=event_id)
             if status != HTTPStatus.OK:
                 return JSONResponse(status_code=status, content={'message': message})
@@ -207,6 +231,13 @@ class EvaluationUsecase:
         :rtype: Union[JSONResponse, List[EvaluationOut]]
 
         """
+        event = EventUsecase.get_event(event_id)
+        if event.registrationType == RegistrationType.REDIRECT:
+            return JSONResponse(
+                status_code=HTTPStatus.NOT_FOUND,
+                content={'message': 'Error: No evaluations for REDIRECT registrationType'},
+            )
+
         status, _, message = self.__events_repository.query_events(event_id=event_id)
         if status != HTTPStatus.OK:
             return JSONResponse(status_code=status, content={'message': message})
